@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#04050b" />
+    <meta name="description" content="Cubo mágico 3D interativo no navegador." />
+    <title>Rubik's Cube</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Cubo mágico 3D interativo"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-logo" viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M32 4 58 18 32 32 6 18Z" fill="#f4f6ff" />
+          <path d="M6 18 32 32v28L6 46Z" fill="#14e07f" />
+          <path d="M58 18 32 32v28l26-14Z" fill="#ff2a4f" />
+          <g stroke="#05060d" stroke-width="2" stroke-linecap="round">
+            <path d="M40.7 27.3 14.7 13.3M49.3 22.7 23.3 8.7M23.3 27.3 49.3 13.3M14.7 22.7 40.7 8.7" />
+            <path d="M23.3 27.3v28M14.7 22.7v28M32 41.3 6 27.3M32 50.7 6 36.7" />
+            <path d="M40.7 27.3v28M49.3 22.7v28M32 41.3l26-14M32 50.7l26-14" />
+          </g>
+        </svg>
+        <div>
+          <h1>Rubik's <span>Cube</span></h1>
+          <p>cubo mágico 3D</p>
+        </div>
+      </div>
+
+      <div class="stats glass">
+        <div class="stat" data-state="idle">
+          <span class="stat-label">Tempo</span>
+          <span class="stat-value mono" id="stat-time">00:00.00</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Movimentos</span>
+          <span class="stat-value mono" id="stat-moves">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Recorde</span>
+          <span class="stat-value mono" id="stat-best">—</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="toast glass" id="toast" role="status" aria-live="polite"></div>
+
+    <section class="win glass" id="win" aria-live="polite">
+      <div class="win-badge" id="win-badge" hidden>★ Novo recorde</div>
+      <h2 class="win-title">Resolvido!</h2>
+      <p class="win-stats"><span class="mono" id="win-time"></span> · <span id="win-moves"></span></p>
+      <button class="btn-primary" id="win-again" type="button">Jogar de novo</button>
+    </section>
+
+    <footer class="bottombar">
+      <p class="hint" id="hint">
+        Arraste <b>fora do cubo</b> para girar · Arraste <b>sobre o cubo</b> para mover as peças ·
+        <b class="fine-only">Scroll</b><b class="coarse-only">Pinça</b> para zoom
+      </p>
+      <nav class="dock glass" aria-label="Controles do jogo">
+        <button class="dock-btn primary" id="btn-scramble" type="button" title="Embaralhar (N)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16 3h5v5" /><path d="M4 20 21 3" /><path d="M21 16v5h-5" /><path d="m15 15 6 6" /><path d="m4 4 5 5" />
+          </svg>
+          <span>Embaralhar</span>
+        </button>
+        <button class="dock-btn" id="btn-undo" type="button" title="Desfazer (Ctrl+Z)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+          </svg>
+          <span>Desfazer</span>
+        </button>
+        <button class="dock-btn" id="btn-solve" type="button" title="Resolver automaticamente">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m3 21 9-9" /><path d="M15 4V2" /><path d="M15 16v-2" /><path d="M8 9h2" /><path d="M20 9h2" />
+            <path d="M17.8 11.8 19 13" /><path d="M17.8 6.2 19 5" /><path d="M12.2 6.2 11 5" /><path d="M15 9h.01" />
+          </svg>
+          <span>Resolver</span>
+        </button>
+        <button class="dock-btn tutorial" id="btn-tutorial" type="button" title="Aprender a resolver passo a passo" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22 10 12 5 2 10l10 5 10-5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /><path d="M22 10v6" />
+          </svg>
+          <span>Tutorial</span>
+        </button>
+        <span class="dock-sep" aria-hidden="true"></span>
+        <button class="dock-btn" id="btn-view" type="button" title="Centralizar visão (Espaço)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" /><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" />
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+          </svg>
+          <span>Centralizar</span>
+        </button>
+        <button class="dock-btn" id="btn-sound" type="button" title="Ligar/desligar som" aria-pressed="true">
+          <svg viewBox="0 0 24 24" id="icon-sound" aria-hidden="true"></svg>
+          <span>Som</span>
+        </button>
+        <button class="dock-btn" id="btn-help" type="button" title="Como jogar">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" />
+          </svg>
+          <span>Ajuda</span>
+        </button>
+      </nav>
+    </footer>
+
+    <aside class="tutor glass" id="tutor" aria-label="Tutorial" aria-live="polite" hidden>
+      <div class="tutor-head">
+        <span class="tutor-kicker">Tutorial · método das camadas</span>
+        <button class="tutor-close" data-action="exit" type="button" aria-label="Sair do tutorial" title="Sair do tutorial">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <ol class="tutor-track" id="tutor-track" aria-hidden="true"></ol>
+      <div class="tutor-body" id="tutor-body"></div>
+      <div class="tutor-actions" id="tutor-actions"></div>
+    </aside>
+
+    <div class="help" id="help" hidden>
+      <div class="help-card glass" role="dialog" aria-modal="true" aria-labelledby="help-title">
+        <h3 id="help-title">Como jogar</h3>
+        <ul class="help-list">
+          <li><b>Arraste fora do cubo</b> para girá-lo em qualquer direção.</li>
+          <li><b>Arraste sobre uma peça</b> para girar a camada na direção do movimento.</li>
+          <li><b>Solte com velocidade</b> para completar o giro com um peteleco.</li>
+          <li><b>Scroll</b> ou <b>pinça</b> no celular para aproximar/afastar.</li>
+          <li><b>Botão direito</b> sempre gira a visão, mesmo sobre o cubo.</li>
+          <li>Não sabe resolver? Clique em <b>Tutorial</b> e aprenda passo a passo.</li>
+        </ul>
+        <h4>Teclado</h4>
+        <div class="keys">
+          <div><kbd>U</kbd><kbd>D</kbd><kbd>L</kbd><kbd>R</kbd><kbd>F</kbd><kbd>B</kbd><span>faces (relativas à visão)</span></div>
+          <div><kbd>M</kbd><kbd>E</kbd><kbd>S</kbd><span>camadas do meio</span></div>
+          <div><kbd>Shift</kbd><span>+ tecla gira no sentido anti-horário</span></div>
+          <div><kbd>Ctrl</kbd><kbd>Z</kbd><span>desfazer</span></div>
+          <div><kbd>N</kbd><span>embaralhar</span><kbd>T</kbd><span>tutorial</span><kbd>Espaço</kbd><span>centralizar</span></div>
+        </div>
+        <button class="btn-primary" id="help-close" type="button">Entendi</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
