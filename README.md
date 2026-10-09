@@ -21,6 +21,20 @@ Para rodar os testes do resolvedor do tutorial:
 npm test
 ```
 
+## Hospedar na Vercel
+
+O projeto já vem configurado (`vercel.json`): build com `npm run build`, saída em `dist/` e cache longo para os arquivos com hash em `/assets`.
+
+**Pelo site (recomendado):** em [vercel.com/new](https://vercel.com/new), importe o repositório `lucasbrun196/rubik-s-cube` e clique em **Deploy** — não precisa mudar nenhuma configuração. A partir daí, cada push na `main` publica o site, e cada pull request ganha uma URL de pré-visualização.
+
+**Pelo terminal:**
+
+```bash
+npx vercel
+```
+
+Na primeira vez ele pede login e cria o projeto; use `npx vercel --prod` para publicar em produção.
+
 ## Como jogar
 
 | Ação | Mouse / toque | Teclado |
